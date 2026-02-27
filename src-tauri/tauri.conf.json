@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Slack Todos",
+  "version": "1.0.0",
+  "identifier": "com.slack-todos.tray",
+  "build": {
+    "frontendDist": "./settings",
+    "beforeBuildCommand": "npm run build:sidecar"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["dmg", "app"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns"
+    ],
+    "externalBin": ["binaries/slack-todos-sidecar"],
+    "resources": [
+      "resources/.env",
+      "icons/iconTemplate.png",
+      "icons/iconTemplate@2x.png"
+    ],
+    "macOS": {
+      "signingIdentity": null,
+      "infoPlist": "Info.plist"
+    }
+  },
+  "plugins": {
+    "shell": {
+      "open": false
+    }
+  }
+}

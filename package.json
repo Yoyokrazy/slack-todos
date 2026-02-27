@@ -1,0 +1,29 @@
+{
+  "name": "slack-todos",
+  "version": "1.0.0",
+  "description": "Syncs Slack reactions you make into an Obsidian todos file",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "build:sidecar": "tsc && npx @yao-pkg/pkg dist/sidecar.js --targets node22-macos-arm64 --output src-tauri/binaries/slack-todos-sidecar-aarch64-apple-darwin && mkdir -p src-tauri/resources && touch src-tauri/resources/.env",
+    "dev": "npm run build:sidecar && cargo tauri dev",
+    "start:cli": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "pack": "npm run build:sidecar && cargo tauri build --bundles app",
+    "dist": "npm run build:sidecar && cargo tauri build"
+  },
+  "dependencies": {
+    "@slack/bolt": "^4.1.0",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@yao-pkg/pkg": "^6.14.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
+  }
+}
