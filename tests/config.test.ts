@@ -153,6 +153,20 @@ describe("config path resolution", () => {
         );
     });
 
+    it("prefers app data dir over bundled path when both exist", async () => {
+        process.env = { ...process.env, ...VALID_ENV };
+        vi.doMock("node:fs", () => ({
+            existsSync: (p: string) =>
+                p.includes("com.slack-todos.tray/.env") || p.includes("/Resources/resources/.env"),
+        }));
+        const { config: loadEnv } = await import("dotenv");
+        vi.mocked(loadEnv).mockClear();
+        await import("../src/config.js");
+        expect(loadEnv).toHaveBeenCalledWith(
+            expect.objectContaining({ path: expect.stringContaining("com.slack-todos.tray/.env") }),
+        );
+    });
+
     it("does not call dotenv when no .env exists at any path", async () => {
         process.env = { ...process.env, ...VALID_ENV };
         vi.doMock("node:fs", () => ({

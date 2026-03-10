@@ -60,8 +60,15 @@ fn save_sync_count(count: u32) {
 
 /// Resolve the path to the `.env` configuration file.
 ///
-/// Checks (in order): bundled resources → app data dir → cwd.
+/// Checks (in order): app data dir → bundled resources → cwd.
+/// App data dir is checked first so user-modified settings (from the
+/// settings window) take precedence over the bundled defaults.
 fn env_path() -> std::path::PathBuf {
+    // User-modified config from settings window takes priority
+    let app_env = app_data_dir().join(".env");
+    if app_env.exists() {
+        return app_env;
+    }
     if let Ok(exe) = std::env::current_exe() {
         if let Some(exe_dir) = exe.parent() {
             // Bundled: Contents/MacOS/../Resources/resources/.env
@@ -70,11 +77,6 @@ fn env_path() -> std::path::PathBuf {
                 return bundled;
             }
         }
-    }
-    // App data dir (user-modified config from settings window)
-    let app_env = app_data_dir().join(".env");
-    if app_env.exists() {
-        return app_env;
     }
     std::env::current_dir()
         .unwrap_or_default()

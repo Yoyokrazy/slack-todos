@@ -2,9 +2,9 @@
  * Application configuration loaded from environment variables.
  *
  * Supports four .env file locations (checked in order):
- * 1. Tauri bundled resource: `<executable dir>/../Resources/resources/.env`
- * 2. Packaged Electron app: `<Resources>/.env`
- * 3. App data dir: `~/Library/Application Support/com.slack-todos.tray/.env`
+ * 1. App data dir: `~/Library/Application Support/com.slack-todos.tray/.env`
+ * 2. Tauri bundled resource: `<executable dir>/../Resources/resources/.env`
+ * 3. Packaged Electron app: `<Resources>/.env`
  * 4. Development: `<cwd>/.env`
  *
  * Required env vars: SLACK_USER_TOKEN, SLACK_APP_TOKEN, SLACK_USER_ID, TODO_FILE_PATH
@@ -26,10 +26,10 @@ const execDir = dirname(process.execPath);
 export const appDataDir = join(homedir(), "Library", "Application Support", "com.slack-todos.tray");
 
 const envPaths = [
+    join(appDataDir, ".env"),
     join(execDir, "..", "Resources", "resources", ".env"),
     join(execDir, "..", "Resources", ".env"),
     resourcesPath ? join(resourcesPath, ".env") : "",
-    join(appDataDir, ".env"),
     join(process.cwd(), ".env"),
 ].filter(Boolean);
 
