@@ -230,6 +230,7 @@ pub fn run() {
                 .enabled(false)
                 .build(app)?;
             let settings_item = MenuItemBuilder::with_id("settings", "Settings...").build(app)?;
+            let restart_item = MenuItemBuilder::with_id("restart", "Restart").build(app)?;
             let readme_item = MenuItemBuilder::with_id("readme", "README").build(app)?;
             let quit_item = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
 
@@ -244,6 +245,7 @@ pub fn run() {
                 .item(&sync_item)
                 .separator()
                 .item(&settings_item)
+                .item(&restart_item)
                 .item(&readme_item)
                 .separator()
                 .item(&quit_item)
@@ -286,6 +288,9 @@ pub fn run() {
                         let _ = std::process::Command::new("open")
                             .arg("https://github.com/Yoyokrazy/slack-todos")
                             .spawn();
+                    }
+                    "restart" => {
+                        tauri::process::restart(&app.env());
                     }
                     _ => {}
                 })
