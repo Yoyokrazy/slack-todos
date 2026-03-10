@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { appendTodo, formatTodo, type TodoEntry } from "../src/obsidian.js";
+import { appendTodo, formatTodo, updateTodoPriority, PRIORITY_EMOJIS, type TodoEntry } from "../src/obsidian.js";
 import { mkdtempSync, rmSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -43,6 +43,36 @@ describe("formatTodo", () => {
         const entry = makeTodo({ permalink: "https://example.com/msg" });
         const result = formatTodo(entry);
         expect(result).toContain("[link](https://example.com/msg)");
+    });
+
+    it("includes priority emoji before suffixes", () => {
+        const result = formatTodo(makeTodo(), ["📅 {{date}}"], 0);
+        expect(result).toMatch(/\[link\]\([^)]+\) 🔺 📅 /);
+    });
+
+    it("omits priority when not provided", () => {
+        const result = formatTodo(makeTodo(), ["📅 {{date}}"]);
+        expect(result).toMatch(/\[link\]\([^)]+\) 📅 /);
+        for (const emoji of Object.values(PRIORITY_EMOJIS)) {
+            expect(result).not.toContain(emoji);
+        }
+    });
+
+    it("renders each priority level with the correct emoji", () => {
+        const expected: Record<number, string> = {
+            0: "🔺", 1: "⏫", 2: "🔼", 3: "🔽", 4: "⏬",
+        };
+        for (const [level, emoji] of Object.entries(expected)) {
+            const result = formatTodo(makeTodo(), undefined, Number(level));
+            expect(result).toContain(` ${emoji}`);
+        }
+    });
+
+    it("ignores invalid priority numbers", () => {
+        const result = formatTodo(makeTodo(), undefined, 99);
+        for (const emoji of Object.values(PRIORITY_EMOJIS)) {
+            expect(result).not.toContain(emoji);
+        }
     });
 });
 
@@ -104,5 +134,74 @@ describe("appendTodo", () => {
         appendTodo(join(tmpDir, "sub/folder/Todos.md"), makeTodo());
         const content = readFileSync(join(tmpDir, "sub/folder/Todos.md"), "utf-8");
         expect(content).toContain("Review the PR please");
+    });
+});
+
+describe("updateTodoPriority", () => {
+    let tmpDir: string;
+
+    beforeEach(() => {
+        tmpDir = mkdtempSync(join(tmpdir(), "slack-todos-test-"));
+    });
+
+    afterEach(() => {
+        rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    it("adds priority emoji to an existing todo", () => {
+        const filePath = join(tmpDir, "Todos.md");
+        writeFileSync(filePath, "# Slack Todos\n\n- [ ] todo Hello [link](https://a.com/1)\n", "utf-8");
+
+        updateTodoPriority(filePath, "https://a.com/1", 0);
+        const content = readFileSync(filePath, "utf-8");
+        expect(content).toContain("[link](https://a.com/1) 🔺");
+    });
+
+    it("inserts priority before existing suffixes", () => {
+        const filePath = join(tmpDir, "Todos.md");
+        writeFileSync(filePath, "# Slack Todos\n\n- [ ] todo Hello [link](https://a.com/1) 📅 2026-03-10\n", "utf-8");
+
+        updateTodoPriority(filePath, "https://a.com/1", 1);
+        const content = readFileSync(filePath, "utf-8");
+        expect(content).toContain("[link](https://a.com/1) ⏫ 📅 2026-03-10");
+    });
+
+    it("replaces an existing priority emoji", () => {
+        const filePath = join(tmpDir, "Todos.md");
+        writeFileSync(filePath, "# Slack Todos\n\n- [ ] todo Hello [link](https://a.com/1) 🔺 📅 2026-03-10\n", "utf-8");
+
+        updateTodoPriority(filePath, "https://a.com/1", 3);
+        const content = readFileSync(filePath, "utf-8");
+        expect(content).toContain("[link](https://a.com/1) 🔽 📅 2026-03-10");
+        expect(content).not.toContain("🔺");
+    });
+
+    it("is a no-op when file does not exist", () => {
+        updateTodoPriority(join(tmpDir, "nonexistent.md"), "https://a.com/1", 0);
+        // No error thrown
+    });
+
+    it("is a no-op when permalink is not found", () => {
+        const filePath = join(tmpDir, "Todos.md");
+        writeFileSync(filePath, "# Slack Todos\n\n- [ ] todo Hello [link](https://a.com/1)\n", "utf-8");
+
+        updateTodoPriority(filePath, "https://a.com/OTHER", 0);
+        const content = readFileSync(filePath, "utf-8");
+        expect(content).not.toContain("🔺");
+    });
+
+    it("does not affect other lines", () => {
+        const filePath = join(tmpDir, "Todos.md");
+        writeFileSync(filePath,
+            "# Slack Todos\n\n" +
+            "- [ ] todo First [link](https://a.com/1)\n" +
+            "- [ ] todo Second [link](https://a.com/2)\n",
+            "utf-8",
+        );
+
+        updateTodoPriority(filePath, "https://a.com/2", 2);
+        const content = readFileSync(filePath, "utf-8");
+        expect(content).toContain("- [ ] todo First [link](https://a.com/1)\n");
+        expect(content).toContain("[link](https://a.com/2) 🔼");
     });
 });

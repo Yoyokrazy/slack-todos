@@ -9,7 +9,7 @@ import App from "@slack/bolt";
 import type { ReactionAddedEvent } from "@slack/types";
 import type { WebClient } from "@slack/web-api";
 import { config } from "./config.js";
-import { appendTodo } from "./obsidian.js";
+import { appendTodo, updateTodoPriority } from "./obsidian.js";
 
 /**
  * Options for creating the Slack Bolt app.
@@ -20,6 +20,15 @@ export interface CreateAppOptions {
     /** Initial sync count to resume from (loaded from persistent state). */
     initialCount?: number;
 }
+
+/** Maps Slack number-emoji reaction names to priority levels. */
+const PRIORITY_REACTIONS: Record<string, number> = {
+    zero: 0,
+    one: 1,
+    two: 2,
+    three: 3,
+    four: 4,
+};
 
 /**
  * Creates and configures the Slack Bolt app.
@@ -41,6 +50,23 @@ export function createApp(options: CreateAppOptions = {}) {
     app.event("reaction_added", async ({ event, client }: { event: ReactionAddedEvent; client: WebClient }) => {
         // Only react to YOUR reactions
         if (event.user !== config.slack.userId) return;
+
+        const priority = PRIORITY_REACTIONS[event.reaction];
+        if (priority !== undefined) {
+            try {
+                const linkResult = await client.chat.getPermalink({
+                    channel: event.item.channel,
+                    message_ts: event.item.ts,
+                });
+                if (linkResult.permalink) {
+                    updateTodoPriority(config.todoFilePath, linkResult.permalink, priority);
+                    console.log(`🔢 Updated priority to ${priority}`);
+                }
+            } catch (err) {
+                console.error("Failed to update todo priority:", err);
+            }
+            return;
+        }
 
         // Only react to the configured emoji(s)
         if (!config.todoEmojis.includes(event.reaction)) return;
