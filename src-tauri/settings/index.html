@@ -103,6 +103,17 @@
     }
     #message.success { display: block; background: var(--success-bg); color: var(--success-fg); }
     #message.error { display: block; background: var(--error-bg); color: var(--error-fg); }
+    .suffix-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+    .suffix-row input { flex: 1; }
+    .suffix-remove {
+      background: none; border: none; color: var(--hint-color); cursor: pointer;
+      font-size: 16px; padding: 0 4px; line-height: 1;
+    }
+    .suffix-remove:hover { color: var(--error-fg); }
+    .info-icon {
+      display: inline-block; font-size: 13px; color: var(--hint-color);
+      cursor: default; margin-left: 4px; vertical-align: middle;
+    }
   </style>
 </head>
 <body>
@@ -134,9 +145,14 @@
       <div class="hint">Full path including filename (e.g. /Users/you/vault/Slack-Todos.md)</div>
     </div>
     <div class="field">
-      <label for="todo-suffix">Todo Suffix</label>
-      <input type="text" id="todo-suffix" placeholder="⏳ {{date}}">
-      <div class="hint">Appended to each todo. Use {{date}} for today's date (YYYY-MM-DD)</div>
+      <label style="display: inline;">Optional Suffixes</label>
+      <span class="info-icon" title="Each suffix is appended to every todo line. Use {{date}} for today's date (YYYY-MM-DD).">ⓘ</span>
+      <div id="suffix-list">
+        <div class="suffix-row">
+          <input type="text" class="suffix-input">
+        </div>
+      </div>
+      <a href="#" id="add-suffix" style="font-size: 12px; color: var(--btn-bg); text-decoration: none; cursor: pointer;">+ Add suffix</a>
     </div>
     <div class="actions">
       <button type="button" id="cancel" class="btn-secondary">Cancel</button>

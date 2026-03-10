@@ -6,7 +6,6 @@ const FIELDS = {
   SLACK_USER_ID: "slack-user-id",
   TODO_EMOJI: "todo-emoji",
   TODO_FILE_PATH: "todo-file-path",
-  TODO_SUFFIX: "todo-suffix",
 };
 
 const DEFAULTS = {
@@ -19,6 +18,60 @@ function showMessage(text, type) {
   el.className = type;
 }
 
+// --- Suffix list management ---
+
+function createSuffixRow(value = "") {
+  const row = document.createElement("div");
+  row.className = "suffix-row";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "suffix-input";
+  input.value = value;
+
+  const removeBtn = document.createElement("button");
+  removeBtn.type = "button";
+  removeBtn.className = "suffix-remove";
+  removeBtn.textContent = "×";
+  removeBtn.addEventListener("click", () => {
+    row.remove();
+    // Ensure at least one row remains
+    const list = document.getElementById("suffix-list");
+    if (!list.querySelector(".suffix-row")) {
+      list.appendChild(createSuffixRow());
+    }
+  });
+
+  row.appendChild(input);
+  row.appendChild(removeBtn);
+  return row;
+}
+
+function getSuffixes() {
+  return Array.from(document.querySelectorAll(".suffix-input"))
+    .map((el) => el.value.trim())
+    .filter(Boolean);
+}
+
+function loadSuffixes(config) {
+  const list = document.getElementById("suffix-list");
+  list.innerHTML = "";
+  const raw = config.TODO_SUFFIX || "";
+  const suffixes = raw ? raw.split("|||").map((s) => s.trim()).filter(Boolean) : [];
+  if (suffixes.length === 0) {
+    list.appendChild(createSuffixRow());
+  } else {
+    suffixes.forEach((s) => list.appendChild(createSuffixRow(s)));
+  }
+}
+
+document.getElementById("add-suffix").addEventListener("click", (e) => {
+  e.preventDefault();
+  document.getElementById("suffix-list").appendChild(createSuffixRow());
+});
+
+// --- Config load/save ---
+
 async function loadConfig() {
   try {
     const config = await invoke("read_config");
@@ -30,6 +83,7 @@ async function loadConfig() {
         el.value = DEFAULTS[key];
       }
     }
+    loadSuffixes(config);
   } catch (e) {
     showMessage("Failed to load config: " + e, "error");
   }
@@ -40,6 +94,10 @@ async function saveConfig() {
   for (const [key, id] of Object.entries(FIELDS)) {
     const val = document.getElementById(id).value.trim();
     if (val) config[key] = val;
+  }
+  const suffixes = getSuffixes();
+  if (suffixes.length > 0) {
+    config.TODO_SUFFIX = suffixes.join("|||");
   }
   try {
     await invoke("write_config", { config });
