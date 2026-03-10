@@ -133,6 +133,11 @@ fn write_config(config: HashMap<String, String>) -> Result<(), String> {
         lines.push(format!("TODO_FILE_PATH={}", v));
     }
     lines.push(String::new());
+    lines.push("# Suffix appended to each todo (supports {{date}} for YYYY-MM-DD)".to_string());
+    if let Some(v) = config.get("TODO_SUFFIX") {
+        lines.push(format!("TODO_SUFFIX={}", v));
+    }
+    lines.push(String::new());
     std::fs::write(&path, lines.join("\n")).map_err(|e| e.to_string())
 }
 

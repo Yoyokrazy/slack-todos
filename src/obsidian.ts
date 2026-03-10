@@ -30,10 +30,12 @@ export interface TodoEntry {
  *
  * @param filePath - Absolute path to the todo file (including filename)
  * @param entry    - The todo to append
+ * @param suffix   - Optional suffix template appended to each line
  */
 export function appendTodo(
     filePath: string,
     entry: TodoEntry,
+    suffix?: string,
 ): void {
     const dir = dirname(filePath);
     if (!existsSync(dir)) {
@@ -50,16 +52,20 @@ export function appendTodo(
         return;
     }
 
-    const line = formatTodo(entry);
+    const line = formatTodo(entry, suffix);
     appendFileSync(filePath, line, "utf-8");
 }
 
 /**
  * Formats a TodoEntry into a Markdown checkbox line.
  * Truncates message text beyond 300 chars.
+ * Appends the configured suffix with {{date}} interpolation.
  */
-export function formatTodo(entry: TodoEntry): string {
+export function formatTodo(entry: TodoEntry, suffix?: string): string {
     const text =
         entry.text.length > 300 ? entry.text.slice(0, 297) + "…" : entry.text;
-    return `- [ ] todo ${text} [link](${entry.permalink})\n`;
+    const resolvedSuffix = suffix
+        ? " " + suffix.replace(/\{\{date\}\}/g, new Date().toISOString().slice(0, 10))
+        : "";
+    return `- [ ] todo ${text} [link](${entry.permalink})${resolvedSuffix}\n`;
 }

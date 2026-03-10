@@ -86,7 +86,7 @@ export function createApp(options: CreateAppOptions = {}) {
                 timestamp: new Date(
                     parseFloat(event.item.ts) * 1000,
                 ).toISOString(),
-            });
+            }, config.todoSuffix || undefined);
 
             console.log(
                 `✅ Synced todo from #${channelInfo.channel?.name ?? event.item.channel}`,

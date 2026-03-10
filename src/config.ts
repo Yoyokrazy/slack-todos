@@ -67,6 +67,8 @@ export const config = {
         .split(",")
         .map((e) => e.trim())
         .filter(Boolean),
+    /** Custom suffix appended to each todo line. Supports {{date}} for today's date (YYYY-MM-DD). */
+    todoSuffix: process.env.TODO_SUFFIX ?? "",
     /** Absolute path to the todo file (including filename and extension) */
     todoFilePath: process.env.TODO_FILE_PATH ?? required("TODO_FILE_PATH"),
 } as const;

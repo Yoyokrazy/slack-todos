@@ -6,6 +6,7 @@ const FIELDS = {
   SLACK_USER_ID: "slack-user-id",
   TODO_EMOJI: "todo-emoji",
   TODO_FILE_PATH: "todo-file-path",
+  TODO_SUFFIX: "todo-suffix",
 };
 
 const DEFAULTS = {
