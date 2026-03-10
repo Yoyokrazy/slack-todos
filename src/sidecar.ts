@@ -15,10 +15,24 @@ function emit(msg: Record<string, unknown>) {
     process.stdout.write(JSON.stringify(msg) + "\n");
 }
 
+/** Parse --initial-count from process.argv. */
+function parseInitialCount(): number {
+    const idx = process.argv.indexOf("--initial-count");
+    if (idx !== -1 && process.argv[idx + 1]) {
+        const n = parseInt(process.argv[idx + 1], 10);
+        return Number.isNaN(n) ? 0 : n;
+    }
+    return 0;
+}
+
 async function main() {
     try {
-        const app = createApp((count) => {
-            emit({ event: "sync", count });
+        const initialCount = parseInitialCount();
+        const app = createApp({
+            initialCount,
+            onSync: (count) => {
+                emit({ event: "sync", count });
+            },
         });
         await app.start();
         emit({ event: "status", value: "Running" });

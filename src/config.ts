@@ -1,10 +1,11 @@
 /**
  * Application configuration loaded from environment variables.
  *
- * Supports three .env file locations:
- * 1. Tauri bundled resource: `<executable dir>/../Resources/.env`
+ * Supports four .env file locations (checked in order):
+ * 1. Tauri bundled resource: `<executable dir>/../Resources/resources/.env`
  * 2. Packaged Electron app: `<Resources>/.env`
- * 3. Development: `<cwd>/.env`
+ * 3. App data dir: `~/Library/Application Support/com.slack-todos.tray/.env`
+ * 4. Development: `<cwd>/.env`
  *
  * Required env vars: SLACK_USER_TOKEN, SLACK_APP_TOKEN, SLACK_USER_ID, TODO_FILE_PATH
  * Optional env vars: TODO_EMOJI (default: "yyk-todo", comma-separated for multiple)
@@ -12,16 +13,23 @@
 import { config as loadEnv } from "dotenv";
 import { join, dirname } from "node:path";
 import { existsSync } from "node:fs";
+import { homedir } from "node:os";
 
 // In Tauri, the sidecar binary sits in MacOS/ — .env is in ../Resources/resources/.env
 // In packaged Electron app, .env lives in the Resources folder.
+// App data dir stores user-modified config from the settings window.
 // In dev, it's in the project root (cwd).
 const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
 const execDir = dirname(process.execPath);
+
+/** macOS app data directory for persistent config and state. */
+export const appDataDir = join(homedir(), "Library", "Application Support", "com.slack-todos.tray");
+
 const envPaths = [
     join(execDir, "..", "Resources", "resources", ".env"),
     join(execDir, "..", "Resources", ".env"),
     resourcesPath ? join(resourcesPath, ".env") : "",
+    join(appDataDir, ".env"),
     join(process.cwd(), ".env"),
 ].filter(Boolean);
 

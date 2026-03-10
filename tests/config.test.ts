@@ -128,7 +128,7 @@ describe("config path resolution", () => {
         );
     });
 
-    it("skips to cwd when bundled paths do not exist", async () => {
+    it("skips to cwd when bundled and app data paths do not exist", async () => {
         process.env = { ...process.env, ...VALID_ENV };
         const cwdEnv = join(process.cwd(), ".env");
         vi.doMock("node:fs", () => ({
@@ -138,6 +138,19 @@ describe("config path resolution", () => {
         vi.mocked(loadEnv).mockClear();
         await import("../src/config.js");
         expect(loadEnv).toHaveBeenCalledWith(expect.objectContaining({ path: cwdEnv }));
+    });
+
+    it("loads from app data dir when bundled paths do not exist", async () => {
+        process.env = { ...process.env, ...VALID_ENV };
+        vi.doMock("node:fs", () => ({
+            existsSync: (p: string) => p.includes("com.slack-todos.tray/.env"),
+        }));
+        const { config: loadEnv } = await import("dotenv");
+        vi.mocked(loadEnv).mockClear();
+        await import("../src/config.js");
+        expect(loadEnv).toHaveBeenCalledWith(
+            expect.objectContaining({ path: expect.stringContaining("com.slack-todos.tray/.env") }),
+        );
     });
 
     it("does not call dotenv when no .env exists at any path", async () => {

@@ -25,7 +25,42 @@ struct TrayState {
     sync_count: u32,
 }
 
+/// macOS app data directory for persistent config and state.
+fn app_data_dir() -> std::path::PathBuf {
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
+    std::path::PathBuf::from(home).join("Library/Application Support/com.slack-todos.tray")
+}
+
+/// Path to the persistent state file (sync count, etc.).
+fn state_path() -> std::path::PathBuf {
+    app_data_dir().join("state.json")
+}
+
+/// Load persisted sync count from state.json (returns 0 if missing/corrupt).
+fn load_sync_count() -> u32 {
+    let path = state_path();
+    if !path.exists() {
+        return 0;
+    }
+    std::fs::read_to_string(&path)
+        .ok()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+        .and_then(|v| v.get("sync_count")?.as_u64())
+        .map(|n| n as u32)
+        .unwrap_or(0)
+}
+
+/// Persist sync count to state.json.
+fn save_sync_count(count: u32) {
+    let dir = app_data_dir();
+    let _ = std::fs::create_dir_all(&dir);
+    let json = serde_json::json!({ "sync_count": count });
+    let _ = std::fs::write(state_path(), serde_json::to_string_pretty(&json).unwrap_or_default());
+}
+
 /// Resolve the path to the `.env` configuration file.
+///
+/// Checks (in order): bundled resources → app data dir → cwd.
 fn env_path() -> std::path::PathBuf {
     if let Ok(exe) = std::env::current_exe() {
         if let Some(exe_dir) = exe.parent() {
@@ -35,6 +70,11 @@ fn env_path() -> std::path::PathBuf {
                 return bundled;
             }
         }
+    }
+    // App data dir (user-modified config from settings window)
+    let app_env = app_data_dir().join(".env");
+    if app_env.exists() {
+        return app_env;
     }
     std::env::current_dir()
         .unwrap_or_default()
@@ -62,10 +102,10 @@ fn read_config() -> Result<HashMap<String, String>, String> {
     Ok(map)
 }
 
-/// Write configuration values to the `.env` file.
+/// Write configuration values to the `.env` file in the app data directory.
 #[tauri::command]
 fn write_config(config: HashMap<String, String>) -> Result<(), String> {
-    let path = env_path();
+    let path = app_data_dir().join(".env");
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
@@ -139,9 +179,10 @@ fn restart_app(app: tauri::AppHandle) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let persisted_count = load_sync_count();
     let state = Arc::new(Mutex::new(TrayState {
         status: "Starting...".to_string(),
-        sync_count: 0,
+        sync_count: persisted_count,
     }));
 
     tauri::Builder::default()
@@ -199,7 +240,7 @@ pub fn run() {
             let status_item = MenuItemBuilder::with_id("status", "Status: Starting...")
                 .enabled(false)
                 .build(app)?;
-            let sync_item = MenuItemBuilder::with_id("sync", "Todos synced: 0")
+            let sync_item = MenuItemBuilder::with_id("sync", format!("Todos synced: {}", persisted_count))
                 .enabled(false)
                 .build(app)?;
             let settings_item = MenuItemBuilder::with_id("settings", "Settings...").build(app)?;
@@ -271,6 +312,8 @@ pub fn run() {
 
             let sidecar_child = sidecar_path.as_ref().and_then(|path| {
                 std::process::Command::new(path)
+                    .arg("--initial-count")
+                    .arg(persisted_count.to_string())
                     .stdout(std::process::Stdio::piped())
                     .stderr(std::process::Stdio::piped())
                     .spawn()
@@ -319,6 +362,7 @@ pub fn run() {
                                 "sync" => {
                                     if let Some(c) = msg.count {
                                         s.sync_count = c;
+                                        save_sync_count(c);
                                     }
                                 }
                                 _ => {}

@@ -12,14 +12,24 @@ import { config } from "./config.js";
 import { appendTodo } from "./obsidian.js";
 
 /**
+ * Options for creating the Slack Bolt app.
+ */
+export interface CreateAppOptions {
+    /** Callback invoked after each successful sync with the cumulative count. */
+    onSync?: (count: number) => void;
+    /** Initial sync count to resume from (loaded from persistent state). */
+    initialCount?: number;
+}
+
+/**
  * Creates and configures the Slack Bolt app.
  *
- * @param onSync - Optional callback invoked after each successful sync
- *                 with the cumulative count of todos synced this session.
+ * @param options - Configuration options including sync callback and initial count.
  * @returns A configured Bolt App instance (call `.start()` to connect).
  */
-export function createApp(onSync?: (count: number) => void) {
-    let syncCount = 0;
+export function createApp(options: CreateAppOptions = {}) {
+    const { onSync, initialCount = 0 } = options;
+    let syncCount = initialCount;
     const app = new App({
         appToken: config.slack.appToken,
         socketMode: true,
