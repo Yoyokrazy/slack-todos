@@ -157,24 +157,10 @@ fn close_settings(app: tauri::AppHandle) {
     }
 }
 
-/// Restart the application by relaunching the .app bundle and exiting.
+/// Restart the application.
 #[tauri::command]
 fn restart_app(app: tauri::AppHandle) {
-    // Resolve the .app bundle path (e.g. Contents/MacOS/../../ → Slack Todos.app)
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(macos_dir) = exe.parent() {
-            let app_bundle = macos_dir.join("../..").canonicalize().ok();
-            if let Some(bundle_path) = app_bundle {
-                // Use open without -n to respect single-instance
-                let _ = std::process::Command::new("open")
-                    .arg(&bundle_path)
-                    .spawn();
-            }
-        }
-    }
-    // Brief delay so `open` registers before we exit
-    std::thread::sleep(std::time::Duration::from_millis(500));
-    app.exit(0);
+    tauri::process::restart(&app.env());
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
