@@ -113,7 +113,16 @@
     .info-icon {
       display: inline-block; font-size: 13px; color: var(--hint-color);
       cursor: default; margin-left: 4px; vertical-align: middle;
+      position: relative;
     }
+    .info-icon .tooltip {
+      display: none; position: absolute; left: 50%; transform: translateX(-50%);
+      top: 100%; margin-top: 4px; padding: 6px 10px; border-radius: 6px;
+      background: var(--input-bg); border: 1px solid var(--input-border);
+      color: var(--fg); font-size: 11px; white-space: nowrap; z-index: 10;
+      pointer-events: none;
+    }
+    .info-icon:hover .tooltip { display: block; }
   </style>
 </head>
 <body>
@@ -146,7 +155,7 @@
     </div>
     <div class="field">
       <label style="display: inline;">Optional Suffixes</label>
-      <span class="info-icon" title="Each suffix is appended to every todo line. Use {{date}} for today's date (YYYY-MM-DD).">ⓘ</span>
+      <span class="info-icon">ⓘ<span class="tooltip">Each suffix is appended to every todo line. Use {{date}} for today's date (YYYY-MM-DD).</span></span>
       <div id="suffix-list">
         <div class="suffix-row">
           <input type="text" class="suffix-input">
