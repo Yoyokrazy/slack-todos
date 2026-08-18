@@ -207,12 +207,15 @@ pub fn run() {
                 }
             }
 
-            // Enable launch at login
+            // Launch-at-login is owned by the user's macOS Login Item, not the
+            // app. Proactively remove any LaunchAgent a previous version
+            // installed so it can't double-launch a second instance alongside
+            // the Login Item.
             {
                 use tauri_plugin_autostart::ManagerExt;
                 let autostart = app.autolaunch();
-                if !autostart.is_enabled().unwrap_or(false) {
-                    let _ = autostart.enable();
+                if autostart.is_enabled().unwrap_or(false) {
+                    let _ = autostart.disable();
                 }
             }
 

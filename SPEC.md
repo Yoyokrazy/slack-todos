@@ -267,6 +267,8 @@ The app is hidden from the macOS Dock via two mechanisms:
 
 The `tauri-plugin-single-instance` plugin prevents multiple copies of the app from running simultaneously. If a second instance is launched, it silently exits.
 
+To avoid a startup race between two auto-launch triggers, the app also ensures it only registers **one** launch-at-login mechanism: launch-at-login is owned by the user's macOS Login Item, and the app does not install its own `LaunchAgent` (see §13).
+
 ## 7. Tray Menu Structure
 
 The tray menu is built in `lib.rs` using Tauri's `MenuBuilder`:
@@ -532,7 +534,7 @@ npm run dist     # .app + .dmg
 - **macOS Gatekeeper**: Users must manually allow the app on first launch via System Settings → Privacy & Security.
 - **arm64 only**: The sidecar is currently built for `aarch64-apple-darwin` only. Intel Mac support would require a second `@yao-pkg/pkg` target and a universal binary or separate build.
 - **No settings UI**: Configuration is entirely via `.env` file. A settings window (Tauri webview or native) could allow editing tokens and paths without file editing.
-- **No login item**: The app does not auto-start at login. Users must manually add it to Login Items or use a LaunchAgent.
+- **Launch at login**: Controlled by the user via a macOS Login Item (System Settings → General → Login Items). The app does **not** install its own `LaunchAgent`; on startup it removes any legacy LaunchAgent left by earlier versions so it can't launch a second instance alongside the Login Item.
 - **Potential native rewrite**: The Node.js sidecar adds ~50 MB to the app bundle. A native Swift or Rust Slack client would eliminate this overhead.
 - **No error recovery UI**: If the sidecar crashes, the tray shows "Error (sidecar exited)" but offers no way to restart it without quitting and relaunching the app.
 - **Copilot code review**: GitHub Copilot code review is not available for private repositories (as of this writing).
