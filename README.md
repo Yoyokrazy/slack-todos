@@ -97,5 +97,5 @@ The vault path field includes a **Browse…** button that opens a native folder 
 Each synced todo appears in your Obsidian file as:
 
 ```markdown
-- [ ] todo Hey can you review the PR? [link](https://yourteam.slack.com/archives/...)
+- [ ] Hey can you review the PR? [link](https://yourteam.slack.com/archives/...) [channel:: #engineering] [author:: Jane Smith] ➕2026-03-31
 ```

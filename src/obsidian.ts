@@ -68,7 +68,11 @@ export function appendTodo(
 }
 
 /**
- * Formats a TodoEntry into a Markdown checkbox line.
+ * Formats a TodoEntry into a Dataview-compatible Markdown checkbox line.
+ *
+ * Output uses Dataview inline fields (`[key:: value]`) for structured metadata
+ * and the Tasks-emoji `➕YYYY-MM-DD` shorthand for the created date.
+ *
  * Truncates message text beyond 300 chars.
  * Appends configured suffixes with {{date}} interpolation.
  */
@@ -82,7 +86,10 @@ export function formatTodo(entry: TodoEntry, suffixes?: string[], priority?: num
     const resolvedSuffix = suffixes && suffixes.length > 0
         ? " " + suffixes.map((s) => s.replace(/\{\{date\}\}/g, today)).join(" ")
         : "";
-    return `- [ ] todo ${text} [link](${entry.permalink})${priorityStr}${resolvedSuffix}\n`;
+    const channel = `[channel:: #${entry.channel}]`;
+    const author = `[author:: ${entry.author}]`;
+    const created = `➕${entry.timestamp.slice(0, 10)}`;
+    return `- [ ] ${text} [link](${entry.permalink}) ${channel} ${author}${priorityStr}${resolvedSuffix} ${created}\n`;
 }
 
 /**
